@@ -1,0 +1,597 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wokwi JSON → Schematic</title>
+<style>
+:root {
+  box-sizing: border-box;
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --card: #fff;
+  --fg: #17191c;
+  --mut: #737982;
+  --bd: #e3e6e9;
+  --ac: #315efb;
+  --soft: #f0f3f6;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111315;
+    --card: #191c1f;
+    --fg: #f1f3f5;
+    --mut: #9aa2ab;
+    --bd: #30353a;
+    --ac: #8ba4ff;
+    --soft: #22272c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111315;
+  --card: #191c1f;
+  --fg: #f1f3f5;
+  --mut: #9aa2ab;
+  --bd: #30353a;
+  --ac: #8ba4ff;
+  --soft: #22272c;
+}
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main {
+  width: min(100% - 40px, 920px);
+  margin: 0 auto;
+  padding: 48px 0 64px;
+}
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 650;
+  letter-spacing: -.04em;
+  line-height: 1.15;
+}
+p.s {
+  margin: 9px 0 0;
+  color: var(--mut);
+  font-size: 14px;
+}
+.workspace,
+.output,
+.netlist-section {
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: var(--card);
+}
+.workspace {
+  padding: 16px;
+}
+.bar,
+.bar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.bar {
+  justify-content: space-between;
+  margin: 14px 0;
+}
+button,
+label.b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+button:hover,
+label.b:hover {
+  border-color: var(--mut);
+  background: var(--soft);
+}
+button:focus-visible,
+label.b:focus-within,
+summary:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+.theme-toggle {
+  white-space: nowrap;
+}
+#drop {
+  display: flex;
+  min-height: 94px;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  box-sizing: border-box;
+  padding: 18px;
+  border: 1px dashed #b9c0c8;
+  border-radius: 9px;
+  color: var(--mut);
+  text-align: left;
+  transition: border-color .15s, background-color .15s;
+}
+#drop.over {
+  border-color: var(--ac);
+  background: var(--soft);
+  color: var(--ac);
+}
+.drop-copy {
+  display: grid;
+  gap: 2px;
+}
+.drop-copy strong {
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 550;
+}
+.drop-copy span {
+  font-size: 12px;
+}
+.file-button {
+  white-space: nowrap;
+}
+#f {
+  display: none;
+}
+details {
+  border-top: 1px solid var(--bd);
+  padding-top: 12px;
+}
+summary {
+  width: fit-content;
+  color: var(--mut);
+  font-size: 13px;
+  cursor: pointer;
+}
+textarea {
+  display: block;
+  width: 100%;
+  height: 180px;
+  box-sizing: border-box;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  resize: vertical;
+}
+#err {
+  margin: 10px 2px;
+  color: #c62828;
+  font-size: 13px;
+}
+.output,
+.netlist-section {
+  margin-top: 20px;
+  overflow: hidden;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bd);
+}
+h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.section-note {
+  color: var(--mut);
+  font-size: 12px;
+}
+#view {
+  overflow: auto;
+  padding: 18px;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+}
+svg text {
+  fill: var(--fg);
+  font-family: system-ui, sans-serif;
+}
+svg .w {
+  fill: none;
+  stroke-width: 2;
+}
+svg .p {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+.net:hover .w {
+  stroke-width: 4;
+}
+#nl {
+  overflow-x: auto;
+  padding: 0 16px 12px;
+}
+table {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+td,
+th {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--bd);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 550;
+}
+tr:last-child td {
+  border-bottom: 0;
+}
+@media (max-width: 640px) {
+  main {
+    width: min(100% - 28px, 920px);
+    padding: 28px 0 40px;
+  }
+  .page-header {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .workspace {
+    padding: 12px;
+  }
+  #drop {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  .bar,
+  .bar-group {
+    width: 100%;
+  }
+  .bar-group button {
+    flex: 1 1 auto;
+  }
+  .section-note {
+    display: none;
+  }
+  #view {
+    padding: 10px;
+  }
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">WOKWI DIAGRAM CONVERTER</p>
+      <h1>JSON to schematic</h1>
+      <p class="s">By Zy Sahidulla</p>
+    </div>
+    <button id="th" class="theme-toggle" type="button">Theme: Auto</button>
+  </header>
+  <section class="workspace" aria-label="Diagram input">
+    <div id="drop">
+      <div class="drop-copy">
+        <strong>Drop a diagram.json file</strong>
+        <span>or select it from your computer</span>
+      </div>
+      <label class="b file-button">
+        Browse files
+        <input id="f" type="file" accept=".json,application/json">
+      </label>
+    </div>
+    <div class="bar">
+      <div class="bar-group">
+        <button id="ex">Load example</button>
+        <button id="pb">Paste from clipboard</button>
+        <button id="cl">Clear</button>
+      </div>
+      <div class="bar-group">
+        <button id="dl">Download SVG</button>
+        <button id="cp">Copy netlist</button>
+      </div>
+    </div>
+    <details>
+      <summary>Edit JSON</summary>
+      <textarea id="t" placeholder="Paste your diagram.json here (Ctrl/Cmd+V works anywhere on the page)…"></textarea>
+    </details>
+  </section>
+  <div id="err" role="alert"></div>
+  <section class="output" aria-labelledby="schematic-heading">
+    <header class="section-header">
+      <h2 id="schematic-heading">Schematic</h2>
+      <span class="section-note">Generated from your diagram</span>
+    </header>
+    <div id="view"></div>
+  </section>
+  <section class="netlist-section" aria-labelledby="netlist-heading">
+    <header class="section-header">
+      <h2 id="netlist-heading">Netlist</h2>
+      <span class="section-note">Connected pins by net</span>
+    </header>
+    <div id="nl"></div>
+  </section>
+</main>
+<script>
+const SAMPLE={parts:[
+{type:"wokwi-breadboard",id:"bb1"},{type:"board-esp32-devkit-c-v4",id:"esp"},
+{type:"wokwi-led",id:"led1",attrs:{color:"red"}},{type:"wokwi-led",id:"led2",attrs:{color:"yellow"}},{type:"wokwi-led",id:"led3",attrs:{color:"limegreen"}},
+{type:"wokwi-resistor",id:"r1",attrs:{value:"1000"}},{type:"wokwi-resistor",id:"r2",attrs:{value:"1000"}},{type:"wokwi-resistor",id:"r3",attrs:{value:"1000"}},
+{type:"wokwi-pushbutton",id:"btn1",attrs:{color:"green"}}],
+connections:[
+["bb1:9t.b","bb1:bn.6","black"],["bb1:13t.b","bb1:bn.10","black"],["bb1:17t.b","bb1:bn.13","black"],["esp:GND.2","bb1:bn.31","black"],
+["bb1:10b.g","esp:18","red"],["bb1:14b.g","esp:19","gold"],["bb1:18b.g","esp:21","limegreen"],
+["led1:A","bb1:10t.a",""],["led1:C","bb1:9t.a",""],["led2:A","bb1:14t.a",""],["led2:C","bb1:13t.a",""],["led3:A","bb1:18t.a",""],["led3:C","bb1:17t.a",""],
+["r1:1","bb1:10t.b",""],["r1:2","bb1:10b.f",""],["r2:1","bb1:14t.b",""],["r2:2","bb1:14b.f",""],["r3:1","bb1:18t.b",""],["r3:2","bb1:18b.f",""],
+["btn1:1.l","bb1:5t.d",""],["btn1:2.l","bb1:3t.d",""],["btn1:1.r","bb1:5b.i",""],["btn1:2.r","bb1:3b.i",""],
+["bb1:5b.j","bb1:bn.3","black"],["esp:25","btn1:2.l","red"]]};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nat=(a,b)=>a.localeCompare(b,undefined,{numeric:true});
+let lastSVG='',lastNL='';
+
+function build(d){
+  const parts={};(d.parts||[]).forEach(p=>parts[p.id]=p);
+  const isBB=id=>/breadboard/.test(parts[id]?.type||'');
+  const uf={};
+  const find=x=>{if(!(x in uf))uf[x]=x;while(uf[x]!==x){uf[x]=uf[uf[x]];x=uf[x]}return x};
+  const key=ref=>{
+    const i=ref.indexOf(':');if(i<1||ref[0]==='$')return null;
+    const id=ref.slice(0,i);let pin=ref.slice(i+1);const p=parts[id];if(!p)return null;
+    if(isBB(id)){let m;
+      if(m=pin.match(/^(\d+)([tb])\./))return`bb:${id}:${m[1]}${m[2]}`;
+      if(m=pin.match(/^([tb][np])\./))return`bb:${id}:${m[1]}`;
+      return`bb:${id}:${pin}`}
+    if(/pushbutton/.test(p.type))pin=pin.replace(/\.[lr]$/,'');
+    pin=pin.replace(/^GND\.\d+$/,'GND');
+    return id+':'+pin};
+  (d.connections||[]).forEach(c=>{
+    const a=key(c[0]),b=key(c[1]);
+    if(a&&b)uf[find(a)]=find(b);else if(a)find(a);else if(b)find(b)});
+  const groups={};
+  Object.keys(uf).forEach(k=>{if(k.startsWith('bb:'))return;(groups[find(k)]??=[]).push(k)});
+  let nets=Object.values(groups).filter(g=>g.length>=2).map(g=>g.map(k=>{const i=k.indexOf(':');return[k.slice(0,i),k.slice(i+1)]}));
+  // choose IC: part with most connected pins
+  const cnt={};nets.forEach(n=>n.forEach(([id])=>cnt[id]=(cnt[id]||0)+1));
+  let ic=null,best=2;Object.keys(cnt).forEach(id=>{if(cnt[id]>best){best=cnt[id];ic=id}});
+  // net names
+  let n=1;
+  nets.forEach(net=>{
+    const gnd=net.some(([,p])=>p==='GND');
+    const pwR=/^(3V3|3\.3V|5V|VIN|VCC)$/i,pw=net.find(([id,p])=>id===ic&&pwR.test(p))||net.find(([,p])=>pwR.test(p));
+    const ip=net.find(([id])=>id===ic);
+    net.name=gnd?'GND':pw?pw[1]:ip?(/^\d+$/.test(ip[1])?'IO'+ip[1]:ip[1]):'N'+(n++);
+    net.gnd=gnd;net.node=gnd?'gnd':pw?'pwr':null});
+  // part pin lists
+  const pinsOf={};
+  nets.forEach(net=>net.forEach(([id,p])=>{(pinsOf[id]??=new Set()).add(p)}));
+  const list=Object.values(parts).filter(p=>!isBB(p.id)).map(p=>{
+    let pins=[...(pinsOf[p.id]||[])].sort(nat);
+    if(p.type==='wokwi-led')pins=['A','C'];
+    else if(p.type==='wokwi-resistor'||p.type==='wokwi-pushbutton')pins=['1','2'];
+    return{...p,pins}}).filter(p=>p.pins.length);
+  const des={},used={};
+  list.forEach(p=>{const t=p.type,pre=t==='wokwi-rgb-led'?'D':/potentiometer/.test(t)?'RV':t==='wokwi-led'?'D':/photoresistor/.test(t)?'LDR':t==='wokwi-resistor'?'R':/pushbutton|switch/.test(t)?'S':/capacitor/.test(t)?'C':/inductor/.test(t)?'L':/transistor/.test(t)?'Q':/buzzer|speaker/.test(t)?'LS':/battery/.test(t)?'BT':/board-|-mcu/.test(t)?'U':'X';
+    const m=p.id.match(/\d+$/);let k=m?+m[0]:1;while(used[pre+k])k++;used[pre+k]=1;des[p.id]=pre+k});
+  return{nets,list,ic,parts,des}}
+
+function fmtVal(v){v=+v;if(!isFinite(v))return'';return v>=1e6?v/1e6+'MΩ':v>=1e3?v/1e3+'kΩ':v+'Ω'}
+
+function render(d){
+  const{nets,list,ic,parts,des}=build(d);
+  if(!nets.length)throw new Error('No connected components found in this JSON.');
+  const pn={};nets.forEach(n=>n.forEach(([i,p])=>pn[i+':'+p]=n));
+  const sc=(id,p)=>{const n=pn[id+':'+p];return!n||n.node?0:n.some(([i])=>i===ic)?1:-1};
+  nets.forEach(n=>n.side=n.node?null:n.some(([i])=>i===ic)?'R':'L');
+  const others=list.filter(p=>p.id!==ic),idxOf=Object.fromEntries(others.map((p,i)=>[p.id,i]));
+  const two=p=>p.pins.length===2;
+  const lnet=(id,p)=>{const n=pn[id+':'+p];return n&&n.side==='L'&&n.length===2?n:null};
+  const isAnchor=p=>p.pins.some(q=>pn[p.id+':'+q]?.side==='R');
+  const used=new Set(),rows=[],ori={};
+  [...others].sort((a,b)=>isAnchor(b)-isAnchor(a)).forEach(p=>{
+    if(used.has(p.id))return;used.add(p.id);const chain=[p];
+    if(two(p)){
+      const sw=sc(p.id,p.pins[0])>sc(p.id,p.pins[1]);
+      ori[p.id]=sw?{l:p.pins[1],r:p.pins[0]}:{l:p.pins[0],r:p.pins[1]};
+      let cur=p;
+      for(;;){
+        const n=lnet(cur.id,ori[cur.id].l);if(!n)break;
+        const o=n.find(([i])=>i!==cur.id),q=o&&others.find(x=>x.id===o[0]);
+        if(!q||!two(q)||used.has(q.id))break;
+        used.add(q.id);n.direct=true;
+        ori[q.id]={r:o[1],l:q.pins.find(x=>x!==o[1])};chain.unshift(q);cur=q}}
+    rows.push(chain)});
+  const hubList=[],headHub=new Map();
+  rows.slice().forEach(r=>{const H=r[0];
+    if(r.length!==1||two(H))return;
+    const order=H.type==='wokwi-rgb-led'?['R','G','B','COM']:H.pins,att=[];
+    H.pins.forEach(pnm=>{const n=lnet(H.id,pnm);if(!n)return;
+      const o=n.find(([i])=>i!==H.id);
+      const tr=o&&rows.find(x=>x!==r&&x[0].id===o[0]&&two(x[0])&&ori[o[0]].l===o[1]);
+      if(tr&&!headHub.has(tr))att.push({pin:pnm,row:tr,net:n})});
+    if(att.length){
+      att.sort((a,b)=>order.indexOf(a.pin)-order.indexOf(b.pin));
+      att.forEach((a,i)=>{headHub.set(a.row,{H,pin:a.pin,key:idxOf[H.id]+(i+1)/100});a.net.direct=true});
+      hubList.push({H,att,row:r,order})}});
+  hubList.forEach(h=>rows.splice(rows.indexOf(h.row),1));
+  const rkey=r=>headHub.has(r)?headHub.get(r).key:Math.min(...r.map(p=>idxOf[p.id]));
+  rows.sort((a,b)=>rkey(a)-rkey(b));
+  const maxC=Math.max(1,...rows.map(r=>r.length));
+  const nL=nets.filter(n=>n.side==='L'&&!n.direct).length,nR=nets.filter(n=>n.side==='R').length;
+  const SEG=160,PR=100+nL*16+120+(maxC-1)*SEG+(hubList.length?150:0),GAP=44,PITCH=74;
+  const HRx=PR-120-(maxC-1)*SEG-40-nL*16-30;
+  const icBoxX=PR+GAP+nR*16+60,pos={};
+  const T=(x,yy,t,o)=>`<text x="${x}" y="${yy}" ${o||''}>${esc(t)}</text>`;
+  let y=0,body='';
+  rows.forEach(chain=>{
+    const m=chain.length,last=chain[m-1];
+    if(!two(last)){
+      const rk=q=>{const n=pn[last.id+':'+q];return n?.node==='pwr'?0:n?.node==='gnd'?2:1},sp=[...last.pins].sort((a,b)=>rk(a)-rk(b)||nat(a,b)),h=sp.length*40+10,PL=PR-120;
+      body+=`<text x="${PL+20}" y="${y+6}" font-size="12" font-weight="600">${esc(des[last.id])} <tspan style="fill:var(--mut)" font-weight="400">${esc(last.type.replace(/^wokwi-/,''))}</tspan></text><rect class="p" x="${PL+20}" y="${y+10}" width="70" height="${h}"/>`;
+      sp.forEach((pnm,i)=>{const py=y+32+i*40;pos[last.id+':'+pnm]={x:PR,y:py,side:'R'};
+        body+=`<line class="p" x1="${PL+90}" y1="${py}" x2="${PR}" y2="${py}"/>`+T(PL+26,py+4,pnm,'font-size="10"')});
+      y+=h+40;return}
+    const ry=y+38;
+    const hh=headHub.get(chain);if(hh)pos[hh.H.id+':'+hh.pin]={x:HRx,y:ry,side:'R'};
+    chain.forEach((p,j)=>{
+      const prx=PR-(m-1-j)*SEG,plx=prx-120,cx=prx-60,t=p.type,o=ori[p.id],sw=o.l!==p.pins[0];
+      pos[p.id+':'+o.l]={x:plx,y:ry,side:'L'};pos[p.id+':'+o.r]={x:prx,y:ry,side:'R'};
+      let ln=-14,rn=14,b='',val='';
+      if(t==='wokwi-resistor'){ln=-30;rn=30;val=fmtVal(p.attrs?.value);
+        b=`<polyline class="p" points="${cx-30},${ry} ${cx-24},${ry} ${cx-18},${ry-9} ${cx-6},${ry+9} ${cx+6},${ry-9} ${cx+18},${ry+9} ${cx+24},${ry} ${cx+30},${ry}"/>`}
+      else if(t==='wokwi-led'){ln=-10;rn=10;const col=esc(p.attrs?.color||'red');val=col;
+        b=`<polygon class="p" points="${cx-10},${ry-11} ${cx-10},${ry+11} ${cx+10},${ry}" style="fill:${col};fill-opacity:.4"/><line class="p" x1="${cx+10}" y1="${ry-11}" x2="${cx+10}" y2="${ry+11}"/><path class="p" d="M${cx-4},${ry-14} l8,-9 M${cx+1},${ry-23} h5 v5 M${cx+5},${ry-10} l8,-9 M${cx+10},${ry-19} h5 v5"/>`}
+      else if(/pushbutton|switch/.test(t)){
+        b=`<circle cx="${cx-14}" cy="${ry}" r="2.5" style="fill:var(--fg)"/><circle cx="${cx+14}" cy="${ry}" r="2.5" style="fill:var(--fg)"/><line class="p" x1="${cx-14}" y1="${ry}" x2="${cx+11}" y2="${ry-15}"/>`}
+      else b=`<rect class="p" x="${cx-14}" y="${ry-10}" width="28" height="20"/>`;
+      body+=`<g${sw?` transform="translate(${2*cx},0) scale(-1,1)"`:''}><line class="p" x1="${plx}" y1="${ry}" x2="${cx+ln}" y2="${ry}"/><line class="p" x1="${cx+rn}" y1="${ry}" x2="${prx}" y2="${ry}"/>${b}</g>`;
+      body+=T(cx,ry-28,des[p.id],'text-anchor="middle" font-size="13" font-weight="600"');
+      if(val)body+=T(cx,ry+32,val,'text-anchor="middle" font-size="11" style="fill:var(--mut)"');
+      body+=T(plx+3,ry-5,o.l,'font-size="10" style="fill:var(--mut)"')+T(prx-3,ry-5,o.r,'text-anchor="end" font-size="10" style="fill:var(--mut)"')});
+    y+=PITCH});
+  let leftH=y;
+  hubList.forEach(({H,att,order})=>{
+    const ys=att.map(a=>pos[H.id+':'+a.pin].y),top=Math.min(...ys);let cy=Math.max(...ys);
+    const rest=order.filter(q=>H.pins.includes(q)&&!att.some(a=>a.pin===q));
+    H.pins.forEach(q=>{if(!order.includes(q)&&!att.some(a=>a.pin===q))rest.push(q)});
+    rest.forEach(q=>{cy+=34;pos[H.id+':'+q]={x:HRx,y:cy,side:'R'}});
+    leftH=Math.max(leftH,cy+30);
+    body+=`<text x="${HRx-110}" y="${top-36}" font-size="12" font-weight="600">${esc(des[H.id])} <tspan style="fill:var(--mut)" font-weight="400">${esc(H.type.replace(/^wokwi-/,''))}</tspan></text><rect class="p" x="${HRx-110}" y="${top-26}" width="80" height="${cy-top+52}"/>`;
+    H.pins.forEach(q=>{const p=pos[H.id+':'+q];body+=`<line class="p" x1="${HRx-30}" y1="${p.y}" x2="${HRx}" y2="${p.y}"/>`+T(HRx-104,p.y+4,q,'font-size="10"')})});
+  const avgY=net=>{const ys=net.map(([id,p])=>pos[id+':'+p]?.y).filter(v=>v!=null);return ys.length?ys.reduce((a,b)=>a+b)/ys.length:1e9};
+  let icPins=[];
+  if(ic){
+    const set=new Set();nets.forEach(nt=>nt.forEach(([id,p])=>{if(id===ic)set.add(p)}));
+    icPins=[...set].sort((a,b)=>{const f=p=>avgY(pn[ic+':'+p].filter(([i])=>i!==ic));const rk=p=>{const n=pn[ic+':'+p];return n.node==='pwr'?0:n.node==='gnd'?2:1};return rk(a)-rk(b)||f(a)-f(b)||nat(a,b)})}
+  const icH=icPins.length*26+40,ICY0=Math.max(0,(leftH-icH)/2);
+  let ICY=ICY0;
+  if(ic){
+    const pp=Object.entries(pos).filter(([k,q])=>!k.startsWith(ic+':')&&q.side==='R'&&pn[k]&&!pn[k].node&&!pn[k].direct).map(([k,q])=>({y:q.y,n:pn[k]}));
+    let bp=1e9;
+    for(let dy=-60;dy<=60;dy+=2){const b0=ICY0+dy;if(b0<0)continue;let pen=Math.abs(dy)*0.05;
+      icPins.forEach((p,i)=>{const n=pn[ic+':'+p];if(n.node)return;const yy=b0+36+i*26;pp.forEach(q=>{const dd=Math.abs(q.y-yy);if(q.n!==n&&dd<14)pen+=14-dd})});
+      if(pen<bp){bp=pen;ICY=b0}}}
+  icPins.forEach((p,i)=>pos[ic+':'+p]={x:icBoxX-30,y:ICY+36+i*26,side:'I'});
+  const cross=(A,B,side)=>{
+    const ya=A.map(([i,p])=>pos[i+':'+p]).filter(Boolean),yb=B.map(([i,p])=>pos[i+':'+p]).filter(Boolean);
+    if(!ya.length||!yb.length)return 0;
+    const a0=Math.min(...ya.map(q=>q.y)),a1=Math.max(...ya.map(q=>q.y)),b0=Math.min(...yb.map(q=>q.y)),b1=Math.max(...yb.map(q=>q.y));
+    let c=yb.filter(q=>q.side!=='I'&&q.y>a0-8&&q.y<a1+8).length;
+    if(side==='R')c+=ya.filter(q=>q.side==='I'&&q.y>b0-8&&q.y<b1+8).length;
+    return c};
+  const orderNets=(arr,side)=>{
+    const base=[...arr].sort((a,b)=>avgY(a)-avgY(b));
+    if(arr.length<2||arr.length>7)return base;
+    let best=base,bc=Infinity;
+    const tot=o=>{let c=0;for(let i=0;i<o.length;i++)for(let j=i+1;j<o.length;j++)c+=cross(o[i],o[j],side);return c};
+    const perm=(a,r)=>{if(!a.length){const c=tot(r);if(c<bc){bc=c;best=r}return}a.forEach((x,i)=>perm([...a.slice(0,i),...a.slice(i+1)],[...r,x]))};
+    perm(base,[]);return best};
+  let wires='',idx=0;
+  nets.filter(n=>n.direct).forEach(net=>{
+    const col=`hsl(${(idx++*53)%360} 65% 48%)`,q=net.map(([i,p])=>pos[i+':'+p]).filter(Boolean);if(q.length<2)return;
+    const x1=Math.min(...q.map(a=>a.x)),x2=Math.max(...q.map(a=>a.x));
+    wires+=`<g class="net"><title>${esc(net.name)}</title><line class="w" stroke="${col}" x1="${x1}" y1="${q[0].y}" x2="${x2}" y2="${q[0].y}"/>${T((x1+x2)/2,q[0].y-6,net.name,`text-anchor="middle" font-size="10" style="fill:${col}"`)}</g>`});
+  ['L','R'].forEach(side=>{
+    orderNets(nets.filter(n=>n.side===side&&!n.direct),side).forEach((net,k)=>{
+      const tx=side==='L'?PR-120-(maxC-1)*SEG-40-k*16:PR+GAP+k*16;
+      const col=`hsl(${(idx++*53)%360} 65% 48%)`;
+      const pts=net.map(([id,p])=>pos[id+':'+p]).filter(Boolean);if(!pts.length)return;
+      const ys=pts.map(q=>q.y),mn=Math.min(...ys),mx=Math.max(...ys);
+      let s=`<g class="net"><title>${esc(net.name)}: ${esc(net.map(([i,p])=>(des[i]||i)+'.'+p).join(', '))}</title>`;
+      if(mx>mn)s+=`<line class="w" stroke="${col}" x1="${tx}" y1="${mn}" x2="${tx}" y2="${mx}"/>`;
+      pts.forEach(q=>{s+=`<line class="w" stroke="${col}" x1="${q.x}" y1="${q.y}" x2="${tx}" y2="${q.y}"/>`;
+        if(pts.length>2)s+=`<circle cx="${tx}" cy="${q.y}" r="3" fill="${col}"/>`});
+      const lp=pts.find(q=>q.side!=='I')||pts[0];
+      s+=`<text x="${lp.side==='L'?lp.x-8:lp.x+8}" y="${lp.y-6}" text-anchor="${lp.side==='L'?'end':'start'}" font-size="10" style="fill:${col}">${esc(net.name)}</text></g>`;
+      wires+=s})});
+  nets.filter(n=>n.node).forEach(net=>{
+    net.forEach(([id,p])=>{const q=pos[id+':'+p];if(!q)return;
+      const dir=q.side==='R'?1:-1,ex=q.x+dir*18,c='var(--fg)';
+      wires+=`<g class="net"><title>${esc(net.name)}</title><line class="w" stroke="${c}" x1="${q.x}" y1="${q.y}" x2="${ex}" y2="${q.y}"/>`;
+      if(net.node==='gnd')wires+=`<line class="w" stroke="${c}" x1="${ex}" y1="${q.y}" x2="${ex}" y2="${q.y+8}"/><line class="p" x1="${ex-9}" y1="${q.y+8}" x2="${ex+9}" y2="${q.y+8}"/><line class="p" x1="${ex-6}" y1="${q.y+13}" x2="${ex+6}" y2="${q.y+13}"/><line class="p" x1="${ex-3}" y1="${q.y+18}" x2="${ex+3}" y2="${q.y+18}"/></g>`;
+      else wires+=`<line class="w" stroke="${c}" x1="${ex}" y1="${q.y}" x2="${ex}" y2="${q.y-12}"/><polygon points="${ex-5},${q.y-12} ${ex+5},${q.y-12} ${ex},${q.y-20}" style="fill:var(--fg)"/><text x="${ex+dir*8}" y="${q.y-14}" font-size="10" text-anchor="${dir>0?'start':'end'}">${esc(net.name)}</text></g>`})});
+  let icSVG='';
+  if(ic){
+    icSVG=`<text x="${icBoxX}" y="${ICY+12}" font-size="12" font-weight="600">${esc(des[ic])} <tspan style="fill:var(--mut)" font-weight="400">${esc(parts[ic].type.replace(/^(wokwi-|board-)/,''))}</tspan></text><rect class="p" x="${icBoxX}" y="${ICY+16}" width="150" height="${icH}"/>`;
+    icPins.forEach(p=>{const q=pos[ic+':'+p];icSVG+=`<line class="p" x1="${q.x}" y1="${q.y}" x2="${icBoxX}" y2="${q.y}"/>`+T(icBoxX+8,q.y+4,/^\d+$/.test(p)?'GPIO'+p:p,'font-size="11"')})}
+  const W=ic?icBoxX+170:PR+GAP+nR*16+40,H=Math.max(leftH,ICY+icH+20)+30;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -70 ${W+20} ${H+80}" width="${W+20}" height="${H+80}" style="max-width:100%;height:auto;color:#1d1d1b">${body}${wires}${icSVG}</svg>`;
+  const nl=nets.map(n=>n.name+': '+n.map(([i,p])=>(des[i]||i)+'.'+p).join(', ')).join('\n');
+  return{svg,nl,nets,des}}
+
+function show(text){
+  $('err').textContent='';
+  try{
+    const{svg,nl,nets,des}=render(JSON.parse(text));
+    lastSVG=svg;lastNL=nl;$('view').innerHTML=svg;
+    $('nl').innerHTML='<table><tr><th>Net</th><th>Connected pins</th></tr>'+nets.map(n=>`<tr><td>${esc(n.name)}</td><td>${esc(n.map(([i,p])=>(des[i]||i)+'.'+p).join(', '))}</td></tr>`).join('')+'</table>';
+  }catch(e){$('err').textContent='Could not read that file: '+e.message}}
+
+const readFile=f=>f&&f.text().then(t=>{$('t').value=t;show(t)});
+$('f').onchange=e=>readFile(e.target.files[0]);
+$('ex').onclick=()=>{const t=JSON.stringify(SAMPLE,null,1);$('t').value=t;show(t)};
+$('t').oninput=e=>show(e.target.value);
+$('cp').onclick=()=>{if(lastNL)navigator.clipboard?.writeText(lastNL).then(()=>{$('cp').textContent='Copied';setTimeout(()=>$('cp').textContent='Copy netlist',1200)}).catch(()=>{})};
+$('dl').onclick=()=>{if(!lastSVG)return;const u=URL.createObjectURL(new Blob([lastSVG.replace(/ style="max-width[^"]*"/,' style="background:#fff"').replace(/var\(--fg\)/g,'#1d1d1b').replace(/var\(--mut\)/g,'#6b6b66').replace(/(<svg[^>]*>)/,'$1<style>.p{fill:none;stroke:#1d1d1b;stroke-width:2}.w{fill:none;stroke-width:2}text{fill:#1d1d1b;font-family:sans-serif}</style>')],{type:'image/svg+xml'}));const a=document.createElement('a');a.href=u;a.download='schematic.svg';a.click();URL.revokeObjectURL(u)};
+const dz=$('drop');
+['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));
+document.addEventListener('drop',e=>readFile(e.dataTransfer.files[0]));
+$('pb').onclick=async()=>{try{const t=await navigator.clipboard.readText();$('t').value=t;show(t)}catch(e){$('t').focus();$('err').textContent='Your browser blocked clipboard access. Click the box below and press Ctrl/Cmd+V instead.'}};
+$('cl').onclick=()=>{$('t').value='';$('view').innerHTML='';$('nl').innerHTML='';$('err').textContent='';lastSVG='';lastNL=''};
+document.addEventListener('paste',e=>{if(e.target.id==='t')return;const t=e.clipboardData?.getData('text');if(t&&t.trim()){e.preventDefault();$('t').value=t;show(t)}});
+const root=document.documentElement,modes=['auto','light','dark'];
+let mode='auto';
+try{mode=localStorage.getItem('theme')||'auto'}catch(e){}
+const applyTheme=()=>{mode==='auto'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',mode);$('th').textContent='Theme: '+mode[0].toUpperCase()+mode.slice(1)};
+$('th').onclick=()=>{mode=modes[(modes.indexOf(mode)+1)%3];try{localStorage.setItem('theme',mode)}catch(e){}applyTheme()};
+applyTheme();
+$('ex').click();
+</script>
+</body>
+</html>
