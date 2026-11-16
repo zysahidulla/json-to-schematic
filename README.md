@@ -16,14 +16,6 @@ Load a diagram by dragging in a `diagram.json` file, choosing a file, pasting JS
 - Supports light, dark, and automatic themes.
 - Runs entirely in the browser; it does not upload diagrams to a server.
 
-## Publish with GitHub Pages
-
-1. Add `index.html`, `README.md`, and `LICENSE` to the root of this repository.
-2. In GitHub, open **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Select the `main` branch and `/ (root)`, then save.
-5. After GitHub Pages finishes deploying, the site URL will appear on the Pages settings screen.
-
 ## License
 
 This project is available under the [MIT License](./LICENSE).
