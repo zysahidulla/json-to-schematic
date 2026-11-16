@@ -2,7 +2,7 @@
 
 Turn a [Wokwi](https://wokwi.com/) `diagram.json` into a readable schematic and netlist in your browser.
 
-## Use it
+## Use It
 
 Open [`index.html`](./index.html) in a modern browser. No installation, build step, or server is required.
 
